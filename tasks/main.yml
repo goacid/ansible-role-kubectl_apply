@@ -1,0 +1,38 @@
+---
+- name: Retrieve all manifest to install
+  find:
+    paths: "{{ kubectl_apply_basedir}}/manifests"
+    file_type: "directory"
+  register: find_manifest
+  delegate_to: 127.0.0.1
+  connection: local
+  run_once: True
+  tags:
+    - manifest
+
+- name: Debug
+  ansible.builtin.debug:
+    var: "find_manifest.files"
+  tags:
+    - manifest  
+
+- name: Loop on playbook manifest to perform include for {{ item.path }}
+  include_vars:
+    file: "{{ item.path }}/vars"
+  delegate_to: 127.0.0.1
+  connection: local
+  run_once: True
+  with_items: 
+    - "{{ find_manifest.files }}"
+  tags:
+    - manifest
+
+- name: Loop on playbook manifest to perform action for {{ item.path }}
+  delegate_to: 127.0.0.1
+  connection: local
+  run_once: True
+  with_items: 
+    - "{{ find_manifest.files }}"
+  command: "kubectl {{ deploy_action}} -f {{ item.path }}"
+  tags:
+    - manifest
