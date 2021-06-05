@@ -8,31 +8,35 @@
   connection: local
   run_once: True
   tags:
-    - manifest
+    - kubectl_apply
 
-- name: Debug
+
+- name: List of all directory to be deployed
   ansible.builtin.debug:
-    var: "find_manifest.files"
+    var: "find_manifest.files|map(attribute='path')"
   tags:
-    - manifest  
+    - kubectl_apply
+  
 
-- name: Loop on playbook manifest to perform include for {{ item.path }}
+- name: Loop on playbook manifest to perform include_vars
   include_vars:
-    file: "{{ item.path }}/vars"
+    file: "{{ item }}/vars"
   delegate_to: 127.0.0.1
   connection: local
   run_once: True
   with_items: 
-    - "{{ find_manifest.files }}"
+    - "{{ find_manifest.files | map(attribute='path')  }}"
   tags:
-    - manifest
+    - kubectl_apply
 
-- name: Loop on playbook manifest to perform action for {{ item.path }}
+- name: Loop on playbook manifest to perform action
   delegate_to: 127.0.0.1
   connection: local
   run_once: True
+  vars:
+   - deploy_action: "{{ item.split('/')[-1] | lower}}_deploy_action"
   with_items: 
-    - "{{ find_manifest.files }}"
-  command: "kubectl {{ deploy_action}} -f {{ item.path }}"
+    "{{ find_manifest.files | map(attribute='path')  }}"
+  command: "kubectl {{ lookup('vars', deploy_action) }} -f {{ item }}"
   tags:
-    - manifest
+    - kubectl_apply
