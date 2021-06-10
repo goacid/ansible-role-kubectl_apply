@@ -34,9 +34,9 @@
   connection: local
   run_once: True
   vars:
-   - deploy_action: "{{ item.split('/')[-1] | lower}}_deploy_action"
+   - kube_deploy_action: "{{ item.split('/')[-1] | lower}}_deploy_action"
   with_items: 
     "{{ find_manifest.files | map(attribute='path')  }}"
-  command: "kubectl {{ lookup('vars', deploy_action) }} -f {{ item }}"
+  command: "kubectl {{ lookup('vars', kube_deploy_action) }} -f {{ item }}"
   tags:
     - kubectl_apply
